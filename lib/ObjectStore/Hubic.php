@@ -17,6 +17,6 @@ use OCP\Files\ObjectStore\IObjectStore;
 use OCP\Files\StorageAuthException;
 use OCP\Files\StorageNotAvailableException;
 
-class Backblaze implements IObjectStore {
-    
+class Hubic implements IObjectStore {
+
 }

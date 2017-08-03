@@ -1,9 +1,9 @@
 <?php
-namespace OCA\ObjectStorageBackblaze\Controller;
+namespace OCA\ObjectStorageApp\Controller;
 
 use OCA\ObjectStorageBackblaze\Service\BackblazeService;
 
-class BackblazeController extends Controller {
+class AppController extends Controller {
 
 
 

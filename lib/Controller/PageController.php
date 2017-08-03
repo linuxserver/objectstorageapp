@@ -1,5 +1,5 @@
 <?php
-namespace OCA\ObjectStorageBackblaze\Controller;
+namespace OCA\ObjectStorageApp\Controller;
 
 use OCP\IRequest;
 use OCP\AppFramework\Http\TemplateResponse;

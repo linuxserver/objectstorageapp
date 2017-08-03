@@ -1,5 +1,5 @@
 <?php
-namespace OCA\ObjectStorageBackblaze\Service;
+namespace OCA\ObjectStorageApp\Service;
 
 use \OCP\IConfig;
 
