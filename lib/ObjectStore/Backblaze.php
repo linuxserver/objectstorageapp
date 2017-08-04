@@ -160,6 +160,7 @@ class Backblaze extends App implements IObjectStore {
 	 * @throws Exception from openstack lib when something goes wrong
 	 */
 	public function readObject($urn) {
+		echo 'urn: '.$urn.' --- ';
 		$this->init();
 		$object = $this->getObject($urn);
 
