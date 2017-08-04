@@ -6,7 +6,8 @@
                 'clientId' => 'username',
                 'applicationId' => 'Secr3tPaSSWoRdt7',
                 // the container to store the data in
-                'bucket' => 'nextcloud',
+                'bucketName' => 'nextcloud',
+                'bucketId' => 'sdfsd24f22f24f2f4f',
         ),
 ),
  */
@@ -82,8 +83,7 @@ class Backblaze extends App implements IObjectStore {
 
 	protected function getObject($urn) {
 		$client = new \GuzzleHttp\Client();
-		$bucket_name = 'nextcloud-b2';
-		$response = $client->get($client->downloadUrl.'file/'.$bucket_name.'/'.$urn, [
+		$response = $client->get($client->downloadUrl.'/file/'.$this->params['bucketName'].'/'.$urn, [
 		    'auth' => [
 		        $client->authorizationToken
 		    ]
@@ -94,12 +94,40 @@ class Backblaze extends App implements IObjectStore {
 		
 	}
 
+    protected function uploadObject($urn, $stream) {
+        $client = new \GuzzleHttp\Client();
+        // Get upload url first
+        $response = $client->get($client->apiUrl.'/b2api/v1/b2_get_upload_url', [
+            'json' => [
+                'bucketId' => $this->params['bucketId']
+            ]
+        ]);
+        if($response->getStatusCode() === 200) {
+            $details = json_decode($response->getBody());
+            $content_length = strlen($stream);
+            //$content_length += 40; // Size of the SHA1 checksum, only applicable if sending checksum
+            $upload = $client->request('POST', $client->apiUrl.'/b2api/v1/b2_upload_file', [
+                'headers' => [
+                    'Authorization'  => $details->authorizationToken,
+                    'X-Bz-File-Name' => $urn,
+                    'Content-Type'   => 'application/octet-stream',
+                    'Content-Length' => $content_length,
+                    'X-Bz-Content-Sha1' => 'do_not_verify' // Can you get the sha1 of a stream?
+                ],
+                'body' => $stream
+            ]);
+            if($upload->getStatusCode() === 200) {
+                //return $response;
+            }
+        }
+    }
+
 
 	/**
 	 * @return string the container name where objects are stored
 	 */
 	public function getStorageId() {
-		return $this->params['storageid'];
+		return $this->params['bucketId'];
 	}
 
 	/**
@@ -108,8 +136,8 @@ class Backblaze extends App implements IObjectStore {
 	 * @throws Exception from openstack lib when something goes wrong
 	 */
 	public function writeObject($urn, $stream) {
-		echo 'write - '.var_dump($urn).' - '.$stream;
-		//$this->init();
+		$this->init();
+        $this->uploadObject($urn, $stream);
 	}
 
 	/**
