@@ -17,9 +17,13 @@ namespace OCA\ObjectStorageApp\ObjectStore;
 use OCP\Files\ObjectStore\IObjectStore;
 use OCP\Files\StorageAuthException;
 use OCP\Files\StorageNotAvailableException;
-use \OCA\ObjectStorageApp\Service\BackblazeService;
-use \OCP\AppFramework\App;
+use OCA\ObjectStorageApp\Service\BackblazeService;
+use OCP\AppFramework\App;
 use OCP\Config;
+use GuzzleHttp\Client;
+use GuzzleHttp\Psr7;
+
+
 
 class Backblaze extends App implements IObjectStore {
 
@@ -94,7 +98,8 @@ class Backblaze extends App implements IObjectStore {
 		
 	}
 
-    protected function uploadObject($urn, $stream) {
+    protected function uploadObject($urn, $stream, $try=0) {
+        $maxtries = 5;
         $client = new \GuzzleHttp\Client();
         // Get upload url first
         $response = $client->get($client->apiUrl.'/b2api/v1/b2_get_upload_url', [
@@ -116,9 +121,18 @@ class Backblaze extends App implements IObjectStore {
                 ],
                 'body' => $stream
             ]);
-            if($upload->getStatusCode() === 200) {
-                //return $response;
+            switch($upload->getStatusCode()) {
+                case 200:
+                    return true;
+                    break;
+                default:
+                    $try++;
+                    if($try <= $maxtries) {
+                        $this->uploadObject($urn, $stream, $try);
+                    }
+                    break;
             }
+
         }
     }
 
@@ -137,7 +151,7 @@ class Backblaze extends App implements IObjectStore {
 	 */
 	public function writeObject($urn, $stream) {
 		$this->init();
-        $this->uploadObject($urn, $stream);
+        $this->uploadObject($urn, $stream, 0);
 	}
 
 	/**
@@ -150,11 +164,12 @@ class Backblaze extends App implements IObjectStore {
 		$object = $this->getObject($urn);
 
 		$objectContent = $object->getBody()->getContents();
-		$stream = $objectContent;
-		//$objectContent->rewind();
+		//$stream = $objectContent;
+		$objectContent->rewind();
+        $stream = Psr7\stream_for($objectContent);
 		//$stream = $objectContent->getStream();
 		// save the object content in the context of the stream to prevent it being gc'd until the stream is closed
-		//stream_context_set_option($stream, 'backblaze', 'content', $objectContent);
+		stream_context_set_option($stream, 'backblaze', 'content', $objectContent);
 		return $stream;
 
 	}
